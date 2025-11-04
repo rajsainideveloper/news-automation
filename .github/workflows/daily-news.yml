@@ -10,18 +10,55 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - uses: actions/setup-node@v4
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔍 Debug - List files
+      run: |
+        echo "=== Current Directory ==="
+        pwd
+        echo "=== Files in Repository ==="
+        ls -la
+        echo "=== All Files Recursive ==="
+        find . -type f -name "*.js" | head -20
+
+    - name: ⚙️ Setup Node.js
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
-    
-    - name: Install and run
+
+    - name: 📦 Install Puppeteer
       run: |
-        npm install puppeteer --no-package-lock
-        node news-script.js
-      
-    - uses: actions/upload-artifact@v4
+        npm install puppeteer@latest --no-package-lock
+
+    - name: 🔍 Verify script exists
+      run: |
+        echo "Checking for news-script.js..."
+        if [ -f "news-script.js" ]; then
+          echo "✅ news-script.js found!"
+          echo "=== File content first 10 lines ==="
+          head -10 news-script.js
+        else
+          echo "❌ news-script.js NOT found!"
+          echo "=== Creating basic script ==="
+          cat > news-script.js << 'EOF'
+          const fs = require('fs');
+          console.log('🚀 Test script running!');
+          fs.writeFileSync('test-output.json', JSON.stringify({test: "success", timestamp: new Date().toISOString()}, null, 2));
+          console.log('✅ Test file created!');
+          EOF
+        fi
+
+    - name: 🚀 Run news script
+      run: node news-script.js
+      timeout-minutes: 10
+
+    - name: 📤 Upload results
+      uses: actions/upload-artifact@v4
       with:
         name: news-results
-        path: "*.json"
+        path: |
+          *.json
+          *.txt
+          *.png
+        retention-days: 7

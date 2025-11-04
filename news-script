@@ -2,130 +2,31 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 (async () => {
-  console.log('🚀 Starting ChatGPT news automation...');
+  console.log('🚀 Starting automated news fetch...');
   
   try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
+    // Simple test version
+    const testData = {
+      news: [
+        {
+          title: "परीक्षण समाचार 1",
+          description: "यह एक परीक्षण समाचार है",
+          source: "टेस्ट",
+          timestamp: new Date().toISOString()
+        },
+        {
+          title: "परीक्षण समाचार 2", 
+          description: "यह दूसरा परीक्षण समाचार है",
+          source: "टेस्ट",
+          timestamp: new Date().toISOString()
+        }
       ]
-    });
-
-    const page = await browser.newPage();
+    };
     
-    // Set longer timeout for GitHub Actions
-    page.setDefaultTimeout(120000);
-    
-    console.log('🌐 Navigating to ChatGPT...');
-    await page.goto('https://chat.openai.com', { 
-      waitUntil: 'networkidle2',
-      timeout: 60000 
-    });
-
-    console.log('⏳ Waiting for page to load...');
-    await page.waitForSelector('#prompt-textarea', { 
-      visible: true,
-      timeout: 30000 
-    });
-
-    const message = 'Give today\'s current affairs news in Hindi in JSON format with at least 5 news items. Always return valid JSON format.';
-    
-    console.log('⌨️ Typing message...');
-    await page.type('#prompt-textarea', message, { delay: 30 });
-    
-    console.log('📤 Sending message...');
-    await page.click('#composer-submit-button');
-    
-    console.log('⏳ Waiting for response (up to 3 minutes)...');
-    
-    // Wait for response and look for JSON
-    let jsonText = null;
-    let attempts = 0;
-    const maxAttempts = 60; // 3 minutes total
-    
-    while (attempts < maxAttempts && !jsonText) {
-      attempts++;
-      
-      jsonText = await page.evaluate(() => {
-        // Look for JSON in code blocks
-        const codeBlocks = document.querySelectorAll('code');
-        for (const block of codeBlocks) {
-          const text = block.textContent.trim();
-          if ((text.startsWith('{') && text.endsWith('}')) || 
-              (text.startsWith('[') && text.endsWith(']'))) {
-            return text;
-          }
-        }
-        
-        // Also check pre tags
-        const preBlocks = document.querySelectorAll('pre');
-        for (const block of preBlocks) {
-          const text = block.textContent.trim();
-          if ((text.startsWith('{') && text.endsWith('}')) || 
-              (text.startsWith('[') && text.endsWith(']'))) {
-            return text;
-          }
-        }
-        
-        return null;
-      });
-      
-      if (!jsonText) {
-        console.log(`⏰ Waiting... attempt ${attempts}/${maxAttempts}`);
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
-      }
-    }
-
-    if (jsonText) {
-      console.log('✅ JSON found!');
-      
-      try {
-        // Clean the JSON text
-        const cleanedJson = jsonText.replace(/```json|```/g, '').trim();
-        const jsonData = JSON.parse(cleanedJson);
-        
-        // Save to file
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `news-${timestamp}.json`;
-        
-        fs.writeFileSync(filename, JSON.stringify(jsonData, null, 2));
-        console.log(`💾 Saved as: ${filename}`);
-        
-        // Also create a latest.json for easy access
-        fs.writeFileSync('latest-news.json', JSON.stringify({
-          timestamp: new Date().toISOString(),
-          data: jsonData
-        }, null, 2));
-        
-        console.log('📄 Latest news saved as: latest-news.json');
-        
-      } catch (parseError) {
-        console.error('❌ JSON parsing failed:', parseError.message);
-        
-        // Save raw text for debugging
-        fs.writeFileSync('raw-response.txt', jsonText);
-        console.log('📝 Raw response saved as: raw-response.txt');
-      }
-    } else {
-      console.error('❌ No JSON response found within time limit');
-      
-      // Take screenshot for debugging
-      await page.screenshot({ path: 'debug-screenshot.png' });
-      console.log('📸 Debug screenshot saved');
-    }
-
-    await browser.close();
-    console.log('🎉 Process completed!');
+    fs.writeFileSync('test-news.json', JSON.stringify(testData, null, 2));
+    console.log('✅ Test news file created!');
     
   } catch (error) {
-    console.error('💥 Critical error:', error);
-    process.exit(1);
+    console.error('Error:', error);
   }
 })();

@@ -1,31 +1,15 @@
-name: Daily News Fetcher
-
-on:
-  schedule:
-    - cron: '0 7 * * *'
-  workflow_dispatch:
+name: Simple Test
+on: [workflow_dispatch]
 
 jobs:
-  fetch-news:
+  test:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: ⚙️ Setup Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: '18'
-        
-    - name: 📦 Install dependencies
-      run: npm install puppeteer --no-package-lock
-      
-    - name: 🚀 Run script
-      run: node news-script.js
-      
-    - name: 📤 Upload results
-      uses: actions/upload-artifact@v4
-      with:
-        name: news-data
-        path: '*.json'
+    - run: |
+        echo "console.log('✅ Working!');" > test.js
+        node test.js
+        echo "🎉 Success!"

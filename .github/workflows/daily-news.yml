@@ -38,7 +38,6 @@ jobs:
           head -5 news-script.js
         else
           echo "❌ news-script.js not found - creating it now"
-          # Create the script without indentation before EOF
           cat > news-script.js << 'EOF'
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -104,7 +103,7 @@ const fs = require('fs');
       });
       
       if (!jsonText) {
-        console.log(`⏰ Waiting... attempt ${attempts}/${maxAttempts}`);
+        console.log("Waiting... attempt $attempts/$maxAttempts");
         await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
@@ -115,10 +114,10 @@ const fs = require('fs');
         const cleanedJson = jsonText.replace(/```json|```/g, '').trim();
         const jsonData = JSON.parse(cleanedJson);
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `news-${timestamp}.json`;
+        const filename = "news-${timestamp}.json";
         
         fs.writeFileSync(filename, JSON.stringify(jsonData, null, 2));
-        console.log(`💾 Saved as: ${filename}`);
+        console.log("💾 Saved as: $filename");
         
         fs.writeFileSync('latest-news.json', JSON.stringify({
           timestamp: new Date().toISOString(),

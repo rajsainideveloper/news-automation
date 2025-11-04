@@ -30,6 +30,8 @@ jobs:
             libxss1 libpangocairo-1.0-0 libcups2 libasound2t64
 
       - name: Run Puppeteer Script
+        env:
+          CHATGPT_SESSION_TOKEN: ${{ secrets.CHATGPT_SESSION_TOKEN }}
         run: node fetch-news.js
 
       - name: Upload results

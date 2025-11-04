@@ -23,10 +23,10 @@ jobs:
 
     - name: 📦 Install dependencies
       run: |
-        npm install puppeteer
+        npm install
 
     - name: 🚀 Run news script
-      run: node news-script.js
+      run: npm start
       timeout-minutes: 10
 
     - name: 📤 Upload news results
@@ -39,12 +39,5 @@ jobs:
           *.png
         retention-days: 7
 
-    - name: 📧 Notify success
-      if: success()
-      run: |
-        echo "✅ News fetched successfully on $(date)" >> status.log
-
-    - name: 📧 Notify failure
-      if: failure()
-      run: |
-        echo "❌ News fetch failed on $(date)" >> status.log
+    - name: 📊 Show file structure
+      run: ls -la

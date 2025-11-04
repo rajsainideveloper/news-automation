@@ -1,0 +1,19 @@
+{
+  "name": "news-automation",
+  "version": "1.0.0",
+  "description": "Automated Hindi news fetcher using ChatGPT",
+  "main": "news-script.js",
+  "scripts": {
+    "start": "node news-script.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["news", "automation", "hindi", "chatgpt"],
+  "author": "Your Name",
+  "license": "MIT"
+}

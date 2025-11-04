@@ -19,8 +19,8 @@ jobs:
         pwd
         echo "=== Files in Repository ==="
         ls -la
-        echo "=== All Files Recursive ==="
-        find . -type f -name "*.js" | head -20
+        echo "=== Looking for JS files ==="
+        find . -name "*.js" | head -10
 
     - name: ⚙️ Setup Node.js
       uses: actions/setup-node@v4
@@ -28,25 +28,124 @@ jobs:
         node-version: '18'
 
     - name: 📦 Install Puppeteer
-      run: |
-        npm install puppeteer@latest --no-package-lock
+      run: npm install puppeteer@latest --no-package-lock
 
-    - name: 🔍 Verify script exists
+    - name: 🔍 Check and Create Script
       run: |
-        echo "Checking for news-script.js..."
         if [ -f "news-script.js" ]; then
           echo "✅ news-script.js found!"
-          echo "=== File content first 10 lines ==="
-          head -10 news-script.js
+          echo "First 5 lines:"
+          head -5 news-script.js
         else
-          echo "❌ news-script.js NOT found!"
-          echo "=== Creating basic script ==="
+          echo "❌ news-script.js not found - creating it now"
+          # Create the script without indentation before EOF
           cat > news-script.js << 'EOF'
-          const fs = require('fs');
-          console.log('🚀 Test script running!');
-          fs.writeFileSync('test-output.json', JSON.stringify({test: "success", timestamp: new Date().toISOString()}, null, 2));
-          console.log('✅ Test file created!');
-          EOF
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+
+(async () => {
+  console.log('🚀 Starting ChatGPT news automation...');
+  
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
+    });
+
+    const page = await browser.newPage();
+    
+    console.log('🌐 Navigating to ChatGPT...');
+    await page.goto('https://chat.openai.com', { 
+      waitUntil: 'networkidle2',
+      timeout: 60000 
+    });
+
+    console.log('⏳ Waiting for page to load...');
+    await page.waitForSelector('#prompt-textarea', { 
+      visible: true,
+      timeout: 30000 
+    });
+
+    const message = 'Give today\'s current affairs news in Hindi in JSON format with at least 5 news items. Always return valid JSON format.';
+    
+    console.log('⌨️ Typing message...');
+    await page.type('#prompt-textarea', message, { delay: 30 });
+    
+    console.log('📤 Sending message...');
+    await page.click('#composer-submit-button');
+    
+    console.log('⏳ Waiting for response (up to 3 minutes)...');
+    
+    let jsonText = null;
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (attempts < maxAttempts && !jsonText) {
+      attempts++;
+      
+      jsonText = await page.evaluate(() => {
+        const codeBlocks = document.querySelectorAll('code');
+        for (const block of codeBlocks) {
+          const text = block.textContent.trim();
+          if ((text.startsWith('{') && text.endsWith('}')) || 
+              (text.startsWith('[') && text.endsWith(']'))) {
+            return text;
+          }
+        }
+        return null;
+      });
+      
+      if (!jsonText) {
+        console.log(`⏰ Waiting... attempt ${attempts}/${maxAttempts}`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+    }
+
+    if (jsonText) {
+      console.log('✅ JSON found!');
+      try {
+        const cleanedJson = jsonText.replace(/```json|```/g, '').trim();
+        const jsonData = JSON.parse(cleanedJson);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `news-${timestamp}.json`;
+        
+        fs.writeFileSync(filename, JSON.stringify(jsonData, null, 2));
+        console.log(`💾 Saved as: ${filename}`);
+        
+        fs.writeFileSync('latest-news.json', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          data: jsonData
+        }, null, 2));
+        
+        console.log('📄 Latest news saved!');
+        
+      } catch (parseError) {
+        console.error('❌ JSON parsing failed');
+        fs.writeFileSync('raw-response.txt', jsonText);
+      }
+    } else {
+      console.error('❌ No JSON response found');
+      await page.screenshot({ path: 'debug-screenshot.png' });
+    }
+
+    await browser.close();
+    console.log('🎉 Process completed!');
+    
+  } catch (error) {
+    console.error('💥 Critical error:', error);
+    process.exit(1);
+  }
+})();
+EOF
+          echo "✅ news-script.js created successfully!"
         fi
 
     - name: 🚀 Run news script
@@ -62,3 +161,6 @@ jobs:
           *.txt
           *.png
         retention-days: 7
+
+    - name: 📊 Show final files
+      run: ls -la
